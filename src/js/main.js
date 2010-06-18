@@ -28,7 +28,9 @@ var SCREEN_WIDTH = window.innerWidth,
     isAboutVisible = false,
     isMenuMouseOver = false,
     shiftKeyIsDown = false,
-    altKeyIsDown = false;
+    altKeyIsDown = false
+    undo = [],
+    redo = [];
 
 init();
 
@@ -92,11 +94,16 @@ function init()
 	menu.save.addEventListener('touchend', onMenuSave, false);
 	menu.clear.addEventListener('click', onMenuClear, false);
 	menu.clear.addEventListener('touchend', onMenuClear, false);
+	menu.undo.addEventListener('click', onMenuUndo, false);
+    menu.undo.addEventListener('touchend', onMenuUndo, false);
+    menu.redo.addEventListener('click', onMenuRedo, false);
+    menu.redo.addEventListener('touchend', onMenuRedo, false);
 	menu.about.addEventListener('click', onMenuAbout, false);
 	menu.about.addEventListener('touchend', onMenuAbout, false);
 	menu.container.addEventListener('mouseover', onMenuMouseOver, false);
 	menu.container.addEventListener('mouseout', onMenuMouseOut, false);
 	container.appendChild(menu.container);
+	styleButtons();
 
 	if (STORAGE)
 	{
@@ -394,6 +401,55 @@ function onMenuClear()
 
 	brush.destroy();
 	brush = eval("new " + BRUSHES[menu.selector.selectedIndex] + "(context)");
+	undo = [];
+	redo = [];
+	styleButtons();
+}
+
+function onMenuUndo()
+{
+    if (0 == undo.length) {
+        return;
+    }
+    
+    var data = undo.pop();
+    var imagedata = context.getImageData(0, 0, canvas.width, canvas.height);
+    context.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    
+    brush.destroy();
+    brush = eval("new " + BRUSHES[data.brush] + "(context)");
+    brush.prevMouseX = data.startX;
+    brush.prevMouseY = data.startY;
+    brush.points = data.points.slice(0);
+    brush.count = data.count;
+    redo.push(data);
+    
+    context.putImageData(data.imagedata, 0, 0);
+    data.imagedata = imagedata;
+    styleButtons();
+}
+
+function onMenuRedo()
+{
+    if (0 == redo.length) {
+        return;
+    }
+    
+    var data = redo.pop();
+    var imagedata = context.getImageData(0, 0, canvas.width, canvas.height);
+    context.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    
+    brush.destroy();
+    brush = eval("new " + BRUSHES[data.brush] + "(context)");
+    brush.prevMouseX = data.startX;
+    brush.prevMouseY = data.startY;
+    brush.points = data.points.slice(0);
+    brush.count = data.count;
+    undo.push(data);
+    
+    context.putImageData(data.imagedata, 0, 0);
+    data.imagedata = imagedata;
+    styleButtons();
 }
 
 function onMenuAbout()
@@ -409,6 +465,7 @@ function onMenuAbout()
 
 function onCanvasMouseDown( event )
 {
+    saveUndo();
 	var data, position;
 
 	clearTimeout(saveTimeOut);
@@ -502,6 +559,23 @@ function saveToLocalStorage()
 	localStorage.canvas = canvas.toDataURL('image/png');
 }
 
+function saveUndo()
+{
+    flatten();
+    var data = {
+        brush:      menu.selector.selectedIndex,
+        count:      brush.count,
+        startX:     brush.prevMouseX,
+        startY:     brush.prevMouseY,
+        points:     brush.points.slice(0),
+        imagedata:  context.getImageData(0, 0, canvas.width, canvas.height)
+    };
+    undo.push(data);
+    redo = [];
+    console.log('saving undo', data);
+    styleButtons();
+}
+
 function flatten()
 {
 	var context = flattenCanvas.getContext("2d");
@@ -530,4 +604,19 @@ function cleanPopUps()
 		about.hide();
 		isAboutVisible = false;
 	}
+}
+
+function styleButtons()
+{
+    if (0 == undo.length) {
+        menu.undo.className = 'button disabled';
+    } else {
+        menu.undo.className = 'button';
+    }
+    
+    if (0 == redo.length) {
+        menu.redo.className = 'button disabled';
+    } else {
+        menu.redo.className = 'button';
+    }
 }

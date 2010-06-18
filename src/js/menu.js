@@ -12,6 +12,7 @@ Menu.prototype =
 	
 	selector: null,
 	save: null,
+	undo: null,
 	clear: null,
 	about: null,
 	
@@ -75,6 +76,18 @@ Menu.prototype =
 		this.clear.className = 'button';
 		this.clear.innerHTML = 'Clear';
 		this.container.appendChild(this.clear);
+		
+		this.container.appendChild(document.createTextNode(" "));
+		this.undo = document.createElement("Undo");
+        this.undo.className = 'button';
+        this.undo.innerHTML = 'Undo';
+        this.container.appendChild(this.undo);
+        
+        this.container.appendChild(document.createTextNode(" "));
+        this.redo = document.createElement("Redo");
+        this.redo.className = 'button';
+        this.redo.innerHTML = 'Redo';
+        this.container.appendChild(this.redo);
 
 		separator = document.createTextNode(" | ");
 		this.container.appendChild(separator);
