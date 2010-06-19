@@ -27,6 +27,7 @@ var SCREEN_WIDTH = window.innerWidth,
     isBgColorSelectorVisible = false,
     isAboutVisible = false,
     isMenuMouseOver = false,
+    ctrlKeyIsDown = false,
     shiftKeyIsDown = false,
     altKeyIsDown = false,
     maxUndo = 40,
@@ -214,6 +215,10 @@ function onWindowKeyDown( event )
 			foregroundColorSelector.container.style.top = mouseY - 125 + 'px';
 			foregroundColorSelector.container.style.visibility = 'visible';
 			break;
+
+		case 17: // Ctrl
+			ctrlKeyIsDown = true;
+			break;
 			
 		case 18: // Alt
 			altKeyIsDown = true;
@@ -225,7 +230,15 @@ function onWindowKeyDown( event )
 		
 		case 70: // f
 			BRUSH_SIZE ++;
-			break;			
+			break;
+
+		case 89: // y
+			if (ctrlKeyIsDown) onMenuRedo();
+			break;
+
+		case 90: // z
+			if (ctrlKeyIsDown) onMenuUndo();
+			break;
 	}
 }
 
@@ -236,6 +249,10 @@ function onWindowKeyUp( event )
 		case 16: // Shift
 			shiftKeyIsDown = false;
 			foregroundColorSelector.container.style.visibility = 'hidden';			
+			break;
+
+		case 17: // Ctrl
+			ctrlKeyIsDown = false;
 			break;
 			
 		case 18: // Alt
