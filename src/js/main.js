@@ -573,13 +573,16 @@ function getState()
 function restoreState(state)
 {
     brush.destroy();
-    brush = eval("new " + BRUSHES[state.brush] + "(context)");
-    
-    for (i in state.props) {
-        if (state.props[i] instanceof Array) {
-            brush[i] = state.props[i].slice(0);
-        } else {
-            brush[i] = state.props[i];
+    brush = eval("new " + BRUSHES[menu.selector.selectedIndex] + "(context)");
+
+    // Only restore brush properties if the current brush is the same.
+    if (state.brush == menu.selector.selectedIndex) {
+        for (i in state.props) {
+            if (state.props[i] instanceof Array) {
+                brush[i] = state.props[i].slice(0);
+            } else {
+                brush[i] = state.props[i];
+            }
         }
     }
     
