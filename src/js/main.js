@@ -558,6 +558,8 @@ function getState()
     for (i in brush) {
         if (!brush[i]) continue;
         if (i == 'context') continue;
+        if (i == 'interval') continue;
+        if (i == 'painters') continue;
         if (typeof brush[i] == "function") continue;
         
         if (brush[i] instanceof Array) {
