@@ -28,7 +28,8 @@ var SCREEN_WIDTH = window.innerWidth,
     isAboutVisible = false,
     isMenuMouseOver = false,
     shiftKeyIsDown = false,
-    altKeyIsDown = false
+    altKeyIsDown = false,
+    maxUndo = 40,
     undo = [],
     redo = [];
 
@@ -412,21 +413,10 @@ function onMenuUndo()
         return;
     }
     
-    var data = undo.pop();
-    var imagedata = context.getImageData(0, 0, canvas.width, canvas.height);
-    context.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    
-    brush.destroy();
-    brush = eval("new " + BRUSHES[data.brush] + "(context)");
-    brush.prevMouseX = data.startX;
-    brush.prevMouseY = data.startY;
-    brush.points = data.points.slice(0);
-    brush.count = data.count;
-    redo.push(data);
-    
-    context.putImageData(data.imagedata, 0, 0);
-    data.imagedata = imagedata;
-    styleButtons();
+    redo.push(getState());
+
+    var state = undo.pop();
+    restoreState(state);
 }
 
 function onMenuRedo()
@@ -434,22 +424,9 @@ function onMenuRedo()
     if (0 == redo.length) {
         return;
     }
-    
-    var data = redo.pop();
-    var imagedata = context.getImageData(0, 0, canvas.width, canvas.height);
-    context.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    
-    brush.destroy();
-    brush = eval("new " + BRUSHES[data.brush] + "(context)");
-    brush.prevMouseX = data.startX;
-    brush.prevMouseY = data.startY;
-    brush.points = data.points.slice(0);
-    brush.count = data.count;
-    undo.push(data);
-    
-    context.putImageData(data.imagedata, 0, 0);
-    data.imagedata = imagedata;
-    styleButtons();
+    undo.push(getState());
+    var state = redo.pop();
+    restoreState(state);
 }
 
 function onMenuAbout()
@@ -465,11 +442,11 @@ function onMenuAbout()
 
 function onCanvasMouseDown( event )
 {
-    saveUndo();
 	var data, position;
 
 	clearTimeout(saveTimeOut);
 	cleanPopUps();
+    saveUndo();
 	
 	if (altKeyIsDown)
 	{
@@ -561,18 +538,53 @@ function saveToLocalStorage()
 
 function saveUndo()
 {
+    if (maxUndo && undo.length >= maxUndo) {
+        undo.shift();
+    }
+    undo.push(getState());
+    redo = [];
+    styleButtons();
+}
+
+function getState()
+{
     flatten();
-    var data = {
+    var state = {
         brush:      menu.selector.selectedIndex,
-        count:      brush.count,
-        startX:     brush.prevMouseX,
-        startY:     brush.prevMouseY,
-        points:     brush.points.slice(0),
+        props:      {},
         imagedata:  context.getImageData(0, 0, canvas.width, canvas.height)
     };
-    undo.push(data);
-    redo = [];
-    console.log('saving undo', data);
+    
+    for (i in brush) {
+        if (!brush[i]) continue;
+        if (i == 'context') continue;
+        if (typeof brush[i] == "function") continue;
+        
+        if (brush[i] instanceof Array) {
+            state.props[i] = brush[i].slice(0);
+        } else {
+            state.props[i] = brush[i];
+        }
+    };
+    
+    return state;
+}
+
+function restoreState(state)
+{
+    brush.destroy();
+    brush = eval("new " + BRUSHES[state.brush] + "(context)");
+    
+    for (i in state.props) {
+        if (state.props[i] instanceof Array) {
+            brush[i] = state.props[i].slice(0);
+        } else {
+            brush[i] = state.props[i];
+        }
+    }
+    
+    context.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    context.putImageData(state.imagedata, 0, 0);
     styleButtons();
 }
 
