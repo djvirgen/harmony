@@ -27,10 +27,10 @@ ribbon.prototype =
 		
 		for (var i = 0; i < 50; i++)
 		{
-			this.painters.push({ dx: SCREEN_WIDTH / 2, dy: SCREEN_HEIGHT / 2, ax: 0, ay: 0, div: 0.1, ease: Math.random() * 0.2 + 0.6 });
+			this.painters.push({ dx: SCREEN_WIDTH / 2, dy: SCREEN_HEIGHT / 2, ax: 0, ay: 0, div: 0.05, ease: Math.random() * 0.2 + 0.6 });
 		}
 		
-		this.interval = setInterval( update, 1000/60 );
+		this.interval = setInterval( update, 1 );
 		
 		function update()
 		{
